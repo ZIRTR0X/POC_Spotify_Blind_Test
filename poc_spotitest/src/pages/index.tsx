@@ -32,12 +32,10 @@ const getRandomSongFromLibrary = async (session: any, setPlayingTrack: Function)
       uri: randomTrack.uri,
     });
 
-    // Utilisez le composant ReactPlayer pour jouer la musique
     setPlayingTrack(randomTrack);
 
   } catch (error) {
     console.error('Error fetching user library:', error.response?.data || error.message);
-    // Handle errors accordingly.
   }
 };
 
@@ -58,25 +56,21 @@ const Home: NextPage = () => {
   };
 
   const handleSubmitAnswer = () => {
-    // Comparez la réponse proposée avec le nom de la chanson en cours
     if (playingTrack && userAnswer.toLowerCase() === playingTrack.name.toLowerCase()) {
-      // Réponse correcte, ajoutez 100 points au score
       setScore(score + 100);
 
-      // Changez la musique
       getRandomSongFromLibrary(session, setPlayingTrack);
 
-      // Effacez la réponse précédente
       setUserAnswer('');
       console.log("Réponse ok")
     } else {
-      // Réponse incorrecte, vous pouvez gérer cela en conséquence
+      setScore(score + 10);
       console.log('Réponse incorrecte, essayez à nouveau.'+userAnswer.toLowerCase()+"-"+playingTrack.name.toLowerCase());
     }
   };
 
   return (
-    <div >
+    <div>
       <Head>
         <title>SpotiGame</title>
         <meta name="description" content="" />
@@ -84,65 +78,93 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
-        <h1>
-          BONJOUR,{' '}
-          {session.status === 'authenticated'
-            ? session.data.user?.name || 'friend'
-            : 'étranger'}
-          !
-        </h1>
-        <p>
-          {session.status === 'authenticated' ? (
-            <>
+        <div className="bg-gray-800 p-4 flex justify-between items-center">
+          <h1 className="text-white text-lg">
+            BONJOUR !{' '}
+            {session.status === 'authenticated'
+              ? session.data.user?.name || ''
+              : 'Veuillez vous connecter'}
+          </h1>
+          <div>
+            {session.status === 'authenticated' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="bg-gray-200 text-black px-2 py-1 rounded"
+                >
+                  Déconnexion {session.data.user?.email}
+                </button>
+
+                
+              </>
+            ) : (
               <button
                 type="button"
-                onClick={() => signOut()}
+                onClick={() => signIn('spotify')}
+                disabled={session.status === 'loading'}
+                className="bg-gray-200 text-black px-2 py-1 rounded"
               >
-                Sign out {session.data.user?.email}
+                Connexion avec Spotify
               </button>
-              
-              {playingTrack && (
-                <ReactPlayer
-                  url={playingTrack.preview_url} // ou tout autre URL audio
-                  playing={true}
-                  controls={true}
-                  volume={1}
-                />
-              )}
-            </>
-          ) : (
-            <button
-              type="button"
-              style={{ '--accent-color': '#15883e' }}
-              onClick={() => signIn('spotify')}
-              disabled={session.status === 'loading'}
-            >
-              Connexion avec Spotify
-            </button>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-gray-300 flex flex-col items-center justify-center space-y-4">
+          {playingTrack && (
+            <div className="mx-auto">
+              <ReactPlayer
+                url={playingTrack.preview_url}
+                playing={true}
+                controls={true}
+                volume={1}
+                width="300px"
+                height="200px" 
+              />
+            </div>
           )}
-        </p>
-        {playingTrack && (
-          <>
-            <button
-                type="button"
-                onClick={() => getRandomSongFromLibrary(session, setPlayingTrack)}
-              >
-                Passer
-            </button>
-            <form>
-              <label>
-                Réponse:
-                <input type="text" value={userAnswer} onChange={handleAnswerChange} />
-              </label>
-              <button type="button" onClick={handleSubmitAnswer}>
-                Soumettre
-              </button>
-            </form>
-          </>
-        )}
+        </div>
+        <div className="bg-gray-400">
+          {playingTrack && (
+ 
+              <div className="flex flex-col items-center space-y-2">
+                <h1> Score : {score}</h1>
+                <form>
+                  <label className="text-lg">
+                    Réponse:
+                    <input
+                      type="text"
+                      value={userAnswer}
+                      onChange={handleAnswerChange}
+                      className="border border-gray-300 px-2 py-1 rounded"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSubmitAnswer}
+                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                  >
+                    Soumettre
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => getRandomSongFromLibrary(session, setPlayingTrack)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                  > 
+                    Passer
+                  </button>
+                </form>
+              </div>
+              
+          )}
+        </div>
+
       </main>
     </div>
   );
+
 };
 
 export default Home;
