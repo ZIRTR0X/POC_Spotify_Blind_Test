@@ -70,15 +70,16 @@ const Home: NextPage = () => {
   };
 
   return (
-    <div>
+    <div className="flex flex-col h-screen">
       <Head>
         <title>SpotiGame</title>
         <meta name="description" content="" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main>
+ <main className="flex-grow flex flex-col">
         <div className="bg-gray-800 p-4 flex justify-between items-center">
+
           <h1 className="text-white text-lg">
             BONJOUR !{' '}
             {session.status === 'authenticated'
@@ -111,39 +112,43 @@ const Home: NextPage = () => {
           </div>
         </div>
 
-        <div className="bg-gray-300 flex flex-col items-center justify-center space-y-4">
+        <div className="bg-gray-300 flex flex-col items-center justify-center space-y-4 flex-grow">
           {playingTrack && (
             <div className="mx-auto">
+              <img
+                src={playingTrack.album.images[0].url} // Assuming the first image of the album is used
+                alt={`Album cover for ${playingTrack.name}`}
+                className="m-auto w-80 h-80"
+              />
               <ReactPlayer
                 url={playingTrack.preview_url}
                 playing={true}
                 controls={true}
                 volume={1}
-                width="300px"
-                height="200px" 
+                className="h-20"
               />
             </div>
           )}
         </div>
-        <div className="bg-gray-400">
+        <div className="bg-gray-200">
           {playingTrack && (
  
-              <div className="flex flex-col items-center space-y-2">
+          <div className="flex flex-col items-center space-y-2 p-5">
                 <h1> Score : {score}</h1>
                 <form>
-                  <label className="text-lg">
-                    Réponse:
+                  <label className="text-lg mx-2">
+                    Votre proposition :
                     <input
                       type="text"
                       value={userAnswer}
                       onChange={handleAnswerChange}
-                      className="border border-gray-300 px-2 py-1 rounded"
+                      className="border border-gray-300 px-2 py-1 mx-2 rounded"
                     />
                   </label>
                   <button
                     type="button"
                     onClick={handleSubmitAnswer}
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                    className="bg-gray-500 text-white px-4 py-2 mx-2 rounded"
                   >
                     Soumettre
                   </button>
@@ -151,7 +156,7 @@ const Home: NextPage = () => {
                   <button
                     type="button"
                     onClick={() => getRandomSongFromLibrary(session, setPlayingTrack)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                    className="bg-gray-500 text-white px-4 py-2 mx-2 rounded"
                   > 
                     Passer
                   </button>
