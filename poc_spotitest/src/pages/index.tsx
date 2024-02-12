@@ -70,16 +70,19 @@ const Home: NextPage = () => {
 
   const handleSubmitAnswer = () => {
     handleAnswer(userAnswer);
-    
+
     if(checkEndGame())
       getRandomSongFromLibrary(session, setPlayingTrack);
-
   };
 
+  /** Return `true` if all artists are found and the music title is found. */
   function checkEndGame(): boolean {
     return (artistsFoundNumber === totalArtistsNumber && musicTitleFound !== '');
   }
 
+  /** Handle the user's answer and update the score.
+   * @param answer The user's answer.
+   */
   function handleAnswer(answer: string) {
     if(!playingTrack) return;
 
@@ -101,27 +104,40 @@ const Home: NextPage = () => {
     }
   }
 
+  /** Calculate the match percentage between the song title and the user's answer.
+   * @param songTitle The song title.
+   * @param userAnswer The user's answer.
+   * @returns The match percentage.
+   */
   function calculateTitleMatchPercentage(songTitle: string, userAnswer: string): number {
     const normalizedSongTitle: string = songTitle.toLowerCase();
     const normalizedUserAnswer: string = userAnswer.toLowerCase();
-  
     const matchPercentage: number = parseFloat((similarity(normalizedSongTitle, normalizedUserAnswer) * 100).toFixed(2));
   
     return matchPercentage;
   }
 
-  function similarity(str1: string, str2: string): number {
-    const longer = str1.length > str2.length ? str1 : str2;
-    const shorter = str1.length > str2.length ? str2 : str1;
-    const longerLength = longer.length;
+  /** Calculate the similarity between two strings.
+   * @param stringA The first string.
+   * @param stringB The second string.
+   * @returns The similarity between the two strings.
+   */
+  function similarity(stringA: string, stringB: string): number {
+    const longer: string = stringA.length > stringB.length ? stringA : stringB;
+    const shorter: string = stringA.length > stringB.length ? stringB : stringA;
+    const longerLength: number = longer.length;
 
-    if (longerLength === 0) {
+    if (longerLength === 0)
       return 1.0;
-    }
-
-    return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength.toString());
+    else
+      return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength.toString());
   }
 
+  /** Calculate the edit distance between two strings.
+   * @param stringA The first string.
+   * @param stringB The second string.
+   * @returns The edit distance between the two strings.
+   */
   function editDistance(stringA: string, stringB: string): number {
     const lowerCaseStringA: string = stringA.toLowerCase();
     const lowerCaseStringB: string = stringB.toLowerCase();
@@ -154,6 +170,10 @@ const Home: NextPage = () => {
     return costs[lowerCaseStringB.length]!;
   }
 
+  /** Check if the user's answer matches the music title.
+   * @param answer The user's answer.
+   * @returns `true` if the user's answer matches the music title, `false` otherwise.
+   */
   function checkMusicTitle(answer: string): boolean {
     if (playingTrack && musicTitleFound === '') {
       const matchPercentage: number = calculateTitleMatchPercentage(playingTrack.name, answer);
@@ -166,14 +186,15 @@ const Home: NextPage = () => {
     return false;
   }
 
+  /** Get the number of artists found in the user's answer.
+   * @param answer The user's answer.
+   * @returns The number of artists found in the user's answer.
+   */
   function getArtistsFoundNumber(answer: string): number {
     if (playingTrack) {
       const artists: string[] = playingTrack.artists.map((artist: any) => artist.name);
-  
       const normalizedAnswer: string = answer.toLowerCase();
-  
       const matchingArtists: string[] = artists.filter((artist) => normalizedAnswer.includes(artist.toLowerCase()));
-
       const newArtistsFound: string[] = matchingArtists.filter((artist) => !artistsFound.includes(artist));
 
       console.log('New artists found:', newArtistsFound);
