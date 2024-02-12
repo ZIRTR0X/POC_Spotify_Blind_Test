@@ -4,12 +4,13 @@ import Head from 'next/head';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactPlayer from 'react-player';
+import { ITrack } from '~/models/itrack';
 
 const SPOTIFY_LIBRARY_ENDPOINT = 'https://api.spotify.com/v1/me/tracks';
 
 const Home: NextPage = () => {
   const session = useSession();
-  const [playingTrack, setPlayingTrack] = useState(null);
+  const [playingTrack, setPlayingTrack] = useState(null) as [ITrack | null, Function];
   const [userAnswer, setUserAnswer] = useState('');
   const [score, setScore] = useState(0);
   const [artistsFoundNumber, setArtistsFoundNumber] = useState(0);
@@ -52,12 +53,12 @@ const Home: NextPage = () => {
   
       initMusicStats(randomTrack);
   
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching user library:', error.response?.data || error.message);
     }
   }
 
-  function initMusicStats(randomTrack) { //TODO: créer une interface pour randomTrack
+  function initMusicStats(randomTrack: ITrack) { //TODO: créer une interface pour randomTrack
     setArtistsFound([]);
     setArtistsFoundNumber(0);
     setMusicTitleFound('');
@@ -85,6 +86,8 @@ const Home: NextPage = () => {
    */
   function handleAnswer(answer: string) {
     if(!playingTrack) return;
+
+    console.log('playingTrack:', playingTrack);
 
     if(checkMusicTitle(answer)) {
       console.log('Title found:', playingTrack.name);
