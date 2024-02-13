@@ -38,17 +38,12 @@ const Home: NextPage = () => {
   const [artistsFound, setArtistsFound] = useState([] as string[]);
   const [totalArtistsNumber, setTotalArtistsNumber] = useState(0);
   const [musicTitleFound, setMusicTitleFound] = useState("");
+  const [endGame, setEndGame] = useState(false);
   const spotifyLogo = (
     <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
       <path d="M19.098 10.638c-3.868-2.297-10.248-2.508-13.941-1.387-.593.18-1.22-.155-1.399-.748-.18-.593.154-1.22.748-1.4 4.239-1.287 11.285-1.038 15.738 1.605.533.317.708 1.005.392 1.538-.316.533-1.005.709-1.538.392zm-.126 3.403c-.272.44-.847.578-1.287.308-3.225-1.982-8.142-2.557-11.958-1.399-.494.15-1.017-.129-1.167-.623-.149-.495.13-1.016.624-1.167 4.358-1.322 9.776-.682 13.48 1.595.44.27.578.847.308 1.286zm-1.469 3.267c-.215.354-.676.465-1.028.249-2.818-1.722-6.365-2.111-10.542-1.157-.402.092-.803-.16-.895-.562-.092-.403.159-.804.562-.896 4.571-1.045 8.492-.595 11.655 1.338.353.215.464.676.248 1.028zm-5.503-17.308c-6.627 0-12 5.373-12 12 0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z" />
     </svg>
   );
-
-  // useEffect(() => {
-  //   if (session.status === "authenticated") {
-  //     getRandomSongFromLibrary(session, setPlayingTrack);
-  //   }
-  // }, [session]);
 
   useEffect(() => {
     if (session.status === "authenticated") {
@@ -62,14 +57,34 @@ const Home: NextPage = () => {
     }
   }, [playlist]);
 
+  function initNewGame() {
+    setScore(0);
+    setEndGame(false);
+    setPlayingTrack(null);
+    setPlaylist(null);
+  }
+
+  function initEndGame() {
+    setScore(0);
+    setEndGame(true);
+    setPlayingTrack(null);
+    setPlaylist(null);
+  }
+
   function setCurrentMusic() {
     if (playlist) {
-      const currentMusic: ITrack = playlist.items[playlistIndex].track;
-      console.log("currentMusic:", currentMusic);
+      if (playlistIndex < playlist.items.length) {
+        const currentMusic: ITrack = playlist.items[playlistIndex].track;
+        console.log("currentMusic:", currentMusic);
 
-      setPlayingTrack(currentMusic);
-      initMusicStats(currentMusic);
-      setPlaylistIndex(playlistIndex + 1);
+        setPlayingTrack(currentMusic);
+        initMusicStats(currentMusic);
+        setPlaylistIndex(playlistIndex + 1);
+      } else {
+        setPlayingTrack(null);
+        setPlaylistIndex(0);
+        setEndGame(true);
+      }
     } else console.log("No playlist selected");
   }
 
@@ -349,6 +364,24 @@ const Home: NextPage = () => {
       </Navbar>
 
       <main className="flex h-max flex-grow flex-col">
+        <div className="">
+          {playingTrack && (
+            <div>
+              <Navbar className="bg-transparent">
+                <NavbarContent justify="end">
+                  <NavbarItem>
+                    <button
+                      onClick={() => initEndGame()}
+                      className="rounded-lg bg-purple-500 px-4 py-2 text-lg font-bold text-white"
+                    >
+                      <p className="text-lg font-bold">X</p>
+                    </button>
+                  </NavbarItem>
+                </NavbarContent>
+              </Navbar>
+            </div>
+          )}
+        </div>
         <div className="flex flex-col items-center justify-center space-y-4">
           {session.status !== "authenticated" && !playingTrack && (
             <div className="mb-40 flex flex-col items-center justify-center space-y-4">
@@ -368,55 +401,77 @@ const Home: NextPage = () => {
         </div>
 
         <div>
-          {playlists && !playingTrack && session.status === "authenticated" && (
+          {endGame && (
             <div className="flex flex-col items-center justify-center space-y-4">
-              <p className="mb-8 mt-16 text-center text-2xl font-bold">
-                Choisissez une playlist pour commencer à jouer.
+              <p className="mt-16 text-center text-2xl font-bold">
+                Fin de la partie !
               </p>
-              <div className="mx-28 flex flex-wrap justify-center space-x-4">
-                {playlists.map((playlist) => (
-                  <button
-                    key={playlist.id} // Add a unique "key" prop
-                    onClick={() => onSelectPlaylist(playlist)}
-                    className="h-auto w-auto"
-                  >
-                    <Card
-                      className="my-6 bg-zinc-700"
-                      onClick={() => onSelectPlaylist(playlist)}
-                    >
-                      <CardHeader className="flex-col items-start px-4 pb-0">
-                        <div className="max-w-52">
-                          <p className="truncate text-lg font-bold text-purple-400">
-                            {playlist.name}
-                          </p>
-                        </div>
-                        <small className="text-white">
-                          {playlist.tracks?.total} titres{" "}
-                          {/* Add type checking */}
-                        </small>
-                      </CardHeader>
-                      <CardBody className="overflow-visible pb-3 pt-2">
-                        {playlist.images?.[0]?.url && ( // Add type checking
-                          <img
-                            src={playlist.images[0]?.url}
-                            alt={`Album cover for ${playlist.name}`}
-                            className="m-auto h-52 w-52 rounded-lg"
-                          />
-                        )}
-                        {!playlist.images?.[0]?.url && <MusicIcon />}{" "}
-                        {/* Add type checking */}
-                      </CardBody>
-                    </Card>
-                  </button>
-                ))}
-              </div>
+              <p className="text-center text-2xl font-bold">
+                Votre score est de {score}
+              </p>
+              <Button
+                onClick={() => initNewGame()}
+                className="bg-purple-500 text-white"
+              >
+                <p className="text-lg font-bold">Rejouer</p>
+              </Button>
             </div>
           )}
         </div>
 
+        <div>
+          {!endGame &&
+            playlists &&
+            !playingTrack &&
+            session.status === "authenticated" && (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <p className="mb-8 mt-16 text-center text-2xl font-bold">
+                  Choisissez une playlist pour commencer à jouer.
+                </p>
+                <div className="mx-28 flex flex-wrap justify-center space-x-4">
+                  {playlists.map((playlist) => (
+                    <button
+                      key={playlist.id} // Add a unique "key" prop
+                      onClick={() => onSelectPlaylist(playlist)}
+                      className="h-auto w-auto"
+                    >
+                      <Card
+                        className="my-6 bg-zinc-700"
+                        onClick={() => onSelectPlaylist(playlist)}
+                      >
+                        <CardHeader className="flex-col items-start px-4 pb-0">
+                          <div className="max-w-52">
+                            <p className="truncate text-lg font-bold text-purple-400">
+                              {playlist.name}
+                            </p>
+                          </div>
+                          <small className="text-white">
+                            {playlist.tracks?.total} titres{" "}
+                            {/* Add type checking */}
+                          </small>
+                        </CardHeader>
+                        <CardBody className="overflow-visible pb-3 pt-2">
+                          {playlist.images?.[0]?.url && ( // Add type checking
+                            <img
+                              src={playlist.images[0]?.url}
+                              alt={`Album cover for ${playlist.name}`}
+                              className="m-auto h-52 w-52 rounded-lg"
+                            />
+                          )}
+                          {!playlist.images?.[0]?.url && <MusicIcon />}{" "}
+                          {/* Add type checking */}
+                        </CardBody>
+                      </Card>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+        </div>
+
         <div className="flex flex-grow flex-col items-center justify-center space-y-4">
           {playingTrack && (
-            <div className="mx-auto mt-20">
+            <div className="mx-auto mt-4">
               <img
                 src={playingTrack?.album.images[0]?.url} // Assuming the first image of the album is used
                 alt={`Album cover for ${playingTrack.name}`}
