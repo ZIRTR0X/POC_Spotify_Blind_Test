@@ -1,31 +1,27 @@
 import type { NextPage } from "next";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Head from "next/head";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import axios from "axios";
 import ReactPlayer from "react-player";
-import { ITrack } from "~/models/itrack";
+import { type ITrack } from "~/models/itrack";
 import {
-  Avatar,
   Button,
+  Card,
+  CardBody,
+  CardHeader,
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
   Input,
-  Link,
   Navbar,
   NavbarContent,
   NavbarItem,
-  NavbarMenu,
-  NavbarMenuItem,
-  NavbarMenuToggle,
   NextUIProvider,
   User,
 } from "@nextui-org/react";
-import Image from "next/image";
-
-const SPOTIFY_LIBRARY_ENDPOINT = "https://api.spotify.com/v1/me/tracks";
+import { MusicIcon } from "./musicIcon";
 
 const Home: NextPage = () => {
   const session = useSession();
@@ -33,6 +29,9 @@ const Home: NextPage = () => {
     ITrack | null,
     Function,
   ];
+  const [playlists, setPlaylists] = useState([]) as [any[], Function];
+  const [playlist, setPlaylist] = useState(null);
+  const [playlistIndex, setPlaylistIndex] = useState(0) as [number, Function];
   const [userAnswer, setUserAnswer] = useState("");
   const [score, setScore] = useState(0);
   const [artistsFoundNumber, setArtistsFoundNumber] = useState(0);
@@ -40,62 +39,38 @@ const Home: NextPage = () => {
   const [totalArtistsNumber, setTotalArtistsNumber] = useState(0);
   const [musicTitleFound, setMusicTitleFound] = useState("");
   const spotifyLogo = (
-    <svg
-      width="24"
-      height="24"
-      xmlns="http://www.w3.org/2000/svg"
-      fill-rule="evenodd"
-      clip-rule="evenodd"
-    >
+    <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
       <path d="M19.098 10.638c-3.868-2.297-10.248-2.508-13.941-1.387-.593.18-1.22-.155-1.399-.748-.18-.593.154-1.22.748-1.4 4.239-1.287 11.285-1.038 15.738 1.605.533.317.708 1.005.392 1.538-.316.533-1.005.709-1.538.392zm-.126 3.403c-.272.44-.847.578-1.287.308-3.225-1.982-8.142-2.557-11.958-1.399-.494.15-1.017-.129-1.167-.623-.149-.495.13-1.016.624-1.167 4.358-1.322 9.776-.682 13.48 1.595.44.27.578.847.308 1.286zm-1.469 3.267c-.215.354-.676.465-1.028.249-2.818-1.722-6.365-2.111-10.542-1.157-.402.092-.803-.16-.895-.562-.092-.403.159-.804.562-.896 4.571-1.045 8.492-.595 11.655 1.338.353.215.464.676.248 1.028zm-5.503-17.308c-6.627 0-12 5.373-12 12 0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z" />
     </svg>
   );
 
+  // useEffect(() => {
+  //   if (session.status === "authenticated") {
+  //     getRandomSongFromLibrary(session, setPlayingTrack);
+  //   }
+  // }, [session]);
+
   useEffect(() => {
     if (session.status === "authenticated") {
-      getRandomSongFromLibrary(session, setPlayingTrack);
+      getPlaylists();
     }
   }, [session]);
 
-  async function getRandomSongFromLibrary(
-    session: any,
-    setPlayingTrack: Function,
-  ) {
-    try {
-      const accessToken = session.data.user.accessToken;
-
-      const response = await axios.get(SPOTIFY_LIBRARY_ENDPOINT, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const tracks = response.data.items.map((item: any) => item.track);
-
-      if (tracks.length === 0) {
-        console.log("User has no tracks in their library.");
-        return;
-      }
-
-      const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-
-      console.log("Random Track:", {
-        name: randomTrack.name,
-        artist: randomTrack.artists
-          .map((artist: any) => artist.name)
-          .join(", "),
-        uri: randomTrack.uri,
-      });
-
-      setPlayingTrack(randomTrack);
-
-      initMusicStats(randomTrack);
-    } catch (error: any) {
-      console.error(
-        "Error fetching user library:",
-        error.response?.data || error.message,
-      );
+  useEffect(() => {
+    if (playlist) {
+      setCurrentMusic();
     }
+  }, [playlist]);
+
+  function setCurrentMusic() {
+    if (playlist) {
+      const currentMusic: ITrack = playlist.items[playlistIndex].track;
+      console.log("currentMusic:", currentMusic);
+
+      setPlayingTrack(currentMusic);
+      initMusicStats(currentMusic);
+      setPlaylistIndex(playlistIndex + 1);
+    } else console.log("No playlist selected");
   }
 
   const handleEnterPress = (e) => {
@@ -105,7 +80,6 @@ const Home: NextPage = () => {
   };
 
   function initMusicStats(randomTrack: ITrack) {
-    //TODO: créer une interface pour randomTrack
     setArtistsFound([]);
     setArtistsFoundNumber(0);
     setMusicTitleFound("");
@@ -119,7 +93,7 @@ const Home: NextPage = () => {
   const handleSubmitAnswer = () => {
     handleAnswer(userAnswer);
 
-    if (checkEndGame()) getRandomSongFromLibrary(session, setPlayingTrack);
+    if (checkEndGame()) setCurrentMusic();
   };
 
   /** Return `true` if all artists are found and the music title is found. */
@@ -280,6 +254,49 @@ const Home: NextPage = () => {
     } else return 0;
   }
 
+  async function getPlaylists() {
+    const response = await axios
+      .get("https://api.spotify.com/v1/me/playlists", {
+        headers: {
+          Authorization: `Bearer ${session?.data?.user.accessToken}`,
+        },
+      })
+      .then((response) => {
+        console.log(response.data);
+        setPlaylists(response.data.items);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+
+    return response;
+  }
+
+  async function onSelectPlaylist(playlist: any) {
+    try {
+      const response = await getPlaylistTracks(playlist.tracks.href);
+      setPlaylist(response);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function getPlaylistTracks(playlistPath: string) {
+    return axios
+      .get(playlistPath, {
+        headers: {
+          Authorization: `Bearer ${session?.data?.user.accessToken}`,
+        },
+      })
+      .then((response) => {
+        console.log(response.data);
+        return response.data;
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+
   return (
     <NextUIProvider className="min-h-screen bg-zinc-900 font-mono text-white">
       <Head>
@@ -323,7 +340,7 @@ const Home: NextPage = () => {
 
       <main className="flex h-max flex-grow flex-col">
         <div className="flex flex-col items-center justify-center space-y-4">
-          {!playingTrack && (
+          {session.status !== "authenticated" && !playingTrack && (
             <div className="mb-40 flex flex-col items-center justify-center space-y-4">
               <p className="my-20 text-center text-2xl font-bold">
                 Veuillez vous connecter avec Spotify pour commencer à jouer.
@@ -336,6 +353,53 @@ const Home: NextPage = () => {
               >
                 <p className="text-lg font-bold text-black">Connexion</p>
               </Button>
+            </div>
+          )}
+        </div>
+
+        <div>
+          {playlists && !playingTrack && session.status === "authenticated" && (
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <p className="mb-8 mt-16 text-center text-2xl font-bold">
+                Choisissez une playlist pour commencer à jouer.
+              </p>
+              <div className="mx-28 flex flex-wrap justify-center space-x-4">
+                {playlists.map((playlist) => (
+                  <button
+                    key={playlist.id} // Add a unique "key" prop
+                    onClick={() => onSelectPlaylist(playlist)}
+                    className="h-auto w-auto"
+                  >
+                    <Card
+                      className="my-6 bg-zinc-700"
+                      onClick={() => onSelectPlaylist(playlist)}
+                    >
+                      <CardHeader className="flex-col items-start px-4 pb-0">
+                        <div className="max-w-52">
+                          <p className="truncate text-lg font-bold text-purple-400">
+                            {playlist.name}
+                          </p>
+                        </div>
+                        <small className="text-white">
+                          {playlist.tracks?.total} titres{" "}
+                          {/* Add type checking */}
+                        </small>
+                      </CardHeader>
+                      <CardBody className="overflow-visible pb-3 pt-2">
+                        {playlist.images?.[0]?.url && ( // Add type checking
+                          <img
+                            src={playlist.images[0]?.url}
+                            alt={`Album cover for ${playlist.name}`}
+                            className="m-auto h-52 w-52 rounded-lg"
+                          />
+                        )}
+                        {!playlist.images?.[0]?.url && <MusicIcon />}{" "}
+                        {/* Add type checking */}
+                      </CardBody>
+                    </Card>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -390,9 +454,7 @@ const Home: NextPage = () => {
 
                 <Button
                   type="button"
-                  onClick={() =>
-                    getRandomSongFromLibrary(session, setPlayingTrack)
-                  }
+                  onClick={() => setCurrentMusic()}
                   className="mx-2 my-4 rounded bg-purple-500 px-4 py-2 text-lg text-white"
                 >
                   Passer
