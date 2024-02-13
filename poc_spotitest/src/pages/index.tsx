@@ -98,6 +98,12 @@ const Home: NextPage = () => {
     }
   }
 
+  const handleEnterPress = (e) => {
+    if (e.key === "Enter") {
+      handleSubmitAnswer();
+    }
+  };
+
   function initMusicStats(randomTrack: ITrack) {
     //TODO: créer une interface pour randomTrack
     setArtistsFound([]);
@@ -306,7 +312,7 @@ const Home: NextPage = () => {
                     color="danger"
                     onClick={() => signOut()}
                   >
-                    <p>Déconnexion</p>
+                    <p className="font-mono">Déconnexion</p>
                   </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
@@ -328,7 +334,7 @@ const Home: NextPage = () => {
                 disabled={session.status === "loading"}
                 startContent={spotifyLogo}
               >
-                <p className="font-semibold text-black">Connexion</p>
+                <p className="text-lg font-bold text-black">Connexion</p>
               </Button>
             </div>
           )}
@@ -364,35 +370,34 @@ const Home: NextPage = () => {
                 </p>
                 <p>Titre : {musicTitleFound !== "" ? musicTitleFound : "?"}</p>
               </div>
-              <form>
-                <Input
-                  type="text"
-                  variant="bordered"
-                  defaultValue="Réponse"
-                  onChange={handleAnswerChange}
-                  value={userAnswer}
-                  className="w-80"
-                />
-                <div className="flex flex-row justify-center">
-                  <Button
-                    type="button"
-                    onClick={handleSubmitAnswer}
-                    className="mx-2 my-4 rounded bg-purple-500 px-4 py-2 text-lg text-white"
-                  >
-                    Soumettre
-                  </Button>
+              <Input
+                type="text"
+                variant="bordered"
+                label="Réponse"
+                onChange={handleAnswerChange}
+                onKeyDown={handleEnterPress}
+                value={userAnswer}
+                className="w-80"
+              />
+              <div className="flex flex-row justify-center">
+                <Button
+                  type="button"
+                  onClick={handleSubmitAnswer}
+                  className="mx-2 my-4 rounded bg-purple-500 px-4 py-2 text-lg text-white"
+                >
+                  Soumettre
+                </Button>
 
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      getRandomSongFromLibrary(session, setPlayingTrack)
-                    }
-                    className="mx-2 my-4 rounded bg-purple-500 px-4 py-2 text-lg text-white"
-                  >
-                    Passer
-                  </Button>
-                </div>
-              </form>
+                <Button
+                  type="button"
+                  onClick={() =>
+                    getRandomSongFromLibrary(session, setPlayingTrack)
+                  }
+                  className="mx-2 my-4 rounded bg-purple-500 px-4 py-2 text-lg text-white"
+                >
+                  Passer
+                </Button>
+              </div>
             </div>
           )}
         </div>
