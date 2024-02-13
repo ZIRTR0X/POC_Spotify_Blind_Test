@@ -272,9 +272,19 @@ const Home: NextPage = () => {
     return response;
   }
 
+  function shuffleArray<T>(array: T[]) {
+    const arrayCopy: T[] = [...array];
+    for (let i = arrayCopy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j]!, arrayCopy[i]!];
+    }
+    return arrayCopy;
+  }
+
   async function onSelectPlaylist(playlist: any) {
     try {
       const response = await getPlaylistTracks(playlist.tracks.href);
+      response.items = shuffleArray(response.items);
       setPlaylist(response);
     } catch (error) {
       console.error(error);
